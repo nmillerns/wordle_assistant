@@ -152,11 +152,12 @@ int main(int argc, char** argv) {
         printf("\nCHOOSE> ");
         int s = -1;
         if (scanf("%d", &s) == 1) {
-        if (0 <= s && s < 15) {
-            strcpy(guess, valid_candidates[s]);
-        } else {
-            printf("\nOriginal guess> ");
-            scanf("%s", guess);
+            if (0 <= s && s < 15) {
+                strcpy(guess, valid_candidates[s]);
+            } else {
+                printf("\nOriginal guess> ");
+                scanf("%s", guess);
+            }
         }
     }
     return 0;
