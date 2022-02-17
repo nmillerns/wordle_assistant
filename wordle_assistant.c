@@ -105,35 +105,35 @@ int respectsClue(const Clue* clue, FiveLetterWord word) {
 }
 
 int main(int argc, char** argv) {
-	FiveLetterWordPool pool;
-	FILE* f = fopen("/etc/dictionaries-common/words", "r");
+    FiveLetterWordPool pool;
+    FILE* f = fopen("/etc/dictionaries-common/words", "r");
     populateFiveLetterWords(f, &pool);
     fclose(f);
 
-	printf("Num of 5 letter words %lu\n", pool.num_words);
+    printf("Num of 5 letter words %lu\n", pool.num_words);
 
-	Clue given_clues[10];
-	size_t num_clues = 0;
-	FiveLetterWord guess;
-	strcpy(guess, "crane");  // Strategy is to start with "crane"
+    Clue given_clues[10];
+    size_t num_clues = 0;
+    FiveLetterWord guess;
+    strcpy(guess, "crane");  // Strategy is to start with "crane"
 
-	while(1) {
-		printf("GUESS:  %s\nRESULT> ", guess);
-		Clue* next_clue = &given_clues[num_clues];
+    while(1) {
+        printf("GUESS:  %s\nRESULT> ", guess);
+        Clue* next_clue = &given_clues[num_clues];
         strcpy(next_clue->guess, guess);
-		char result[2048];
-		if (scanf("%s", result) == 1 && stringIsValidFeedback(result)) {
+        char result[2048];
+        if (scanf("%s", result) == 1 && stringIsValidFeedback(result)) {
             strcpy(next_clue->feedback, result);
             num_clues++;
-		} else if (strlen(result) == 1 && result[0] == 'Q' || result[0] == 'q') {
+        } else if (strlen(result) == 1 && result[0] == 'Q' || result[0] == 'q') {
             return 0;
-		} else {
-		    printf("Invalid RESULT format\n");
+        } else {
+            printf("Invalid RESULT format\n");
             return 1;
-		}
-		FiveLetterWord valid_candidates[15];
-		size_t num_valid_candidates = 0;
-		for (size_t i = 0; i < pool.num_words && num_valid_candidates < 15; ++i) {
+        }
+        FiveLetterWord valid_candidates[15];
+        size_t num_valid_candidates = 0;
+        for (size_t i = 0; i < pool.num_words && num_valid_candidates < 15; ++i) {
             int is_valid_candidate = 1;
             for (size_t j = 0; j < num_clues && is_valid_candidate; ++j) {
                 if (!respectsClue(&given_clues[j], pool.words[i])) {
@@ -148,18 +148,17 @@ int main(int argc, char** argv) {
                 printf("%3lu: %s    ", num_valid_candidates, valid_candidates[num_valid_candidates]);
                 num_valid_candidates++;
             }
-		}
-		printf("\nCHOOSE> ");
-		int s = -1;
-		if (scanf("%d", &s) == 1) {
-		    if (0 <= s && s < 15) {
-                strcpy(guess, valid_candidates[s]);
-		    } else {
-		        printf("\nOriginal guess> ");
-                scanf("%s", guess);
-		    }
-		}
-	}
-	return 0;
+        }
+        printf("\nCHOOSE> ");
+        int s = -1;
+        if (scanf("%d", &s) == 1) {
+        if (0 <= s && s < 15) {
+            strcpy(guess, valid_candidates[s]);
+        } else {
+            printf("\nOriginal guess> ");
+            scanf("%s", guess);
+        }
+    }
+    return 0;
 }
 
