@@ -2,6 +2,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef char FiveLetterWord[5 + 1];  // extra null termination character
+#define MAX_NUM_WORDS 10000
+
+#define CLUE_CORRECT_POS_LETTER_GREEN 'G'
+#define CLUE_CORRECT_LETTER_POS_WRONG_YELLOW 'Y'
+#define CLUE_INCORRECT_LETTER_GRAY 'X'
+
+/**
+ * Represents a clue given by Worlde website when a guess word is entered
+ * Each letter has a corresponding response: either correct, correct but wrong position, or incorrect
+ */
+typedef struct {
+    FiveLetterWord guess;
+    FiveLetterWord feedback;
+} Clue;
+
+/**
+ * Finds the first position of a given letter in a word
+ * @param word
+ * @param letter
+ * @return the position of the first occurance of the letter. -1 if no such letter is found
+ */
 int findLetter(const char* word, const char letter) {
     for (size_t i = 0; i < strlen(word); ++i) {
         if (word[i] == letter) {
@@ -11,10 +33,21 @@ int findLetter(const char* word, const char letter) {
     return -1;
 }
 
+/**
+ * Determine if a word contains a given letter
+ * @param word
+ * @param letter
+ * @return 1 if letter appears in the word 0 otherwise
+ */
 int containsLetter(const char* word, const char letter) {
     return findLetter(word, letter) >= 0;
 }
 
+/**
+ * Determine if a string contains only lower case alphabetic characters
+ * @param str
+ * @return 1 if all letters are lower alpha else 0
+ */
 int stringIsExclusiveLowerAlpha(char* str) {
     for (size_t i = 0; i < strlen(str); ++i) {
         if (str[i] < 'a' || str[i] > 'z') {
@@ -24,19 +57,27 @@ int stringIsExclusiveLowerAlpha(char* str) {
     return 1;
 }
 
-typedef char FiveLetterWord[5 + 1];  // extra null termination character
-#define MAX_NUM_WORDS 10000
-
+/**
+ * A collection of five letter words
+ */
 typedef struct {
     FiveLetterWord words[MAX_NUM_WORDS];
     size_t num_words;
 } FiveLetterWordPool;
 
+/**
+ * Appends a word to a FiveLetterWordPool
+ */
 void appendWord(FiveLetterWordPool* word_pool, FiveLetterWord word) {
     strcpy(word_pool->words[word_pool->num_words], word);
     word_pool->num_words++;
 }
 
+/**
+ * Populates FiveLetterWordPool from words contained in a dictionary file
+ * @param dictionary_file
+ * @param five_letter_words_out
+ */
 void populateFiveLetterWords(FILE* dictionary_file, FiveLetterWordPool* five_letter_words_out) {
     five_letter_words_out->num_words = 0;
     const size_t BUFFER_SIZE = 2048;
@@ -53,15 +94,14 @@ void populateFiveLetterWords(FILE* dictionary_file, FiveLetterWordPool* five_let
     }
 }
 
-#define CLUE_CORRECT_POS_LETTER_GREEN 'G'
-#define CLUE_CORRECT_LETTER_POS_WRONG_YELLOW 'Y'
-#define CLUE_INCORRECT_LETTER_GRAY 'X'
-typedef struct {
-    FiveLetterWord guess;
-    FiveLetterWord feedback;
-} Clue;
-
-int stringIsValidFeedback(const char* str) {
+/**
+ * Determine if a given string is a validly formatted clue
+ * A valid clue is 5 letters long
+ * where each letter is either G (correct), Y (correct but wrong position), or X (incorrect)
+ * @param str
+ * @return 1 if str is a valid clue else 0
+ */
+int isClueFormat(const char* str) {
     if (5 != strlen(str)) {
         return 0;
     }
@@ -73,9 +113,16 @@ int stringIsValidFeedback(const char* str) {
     return 1;
 }
 
-int respectsClue(const Clue* clue, FiveLetterWord word) {
+/**
+ * Determine if a given FiveLetterWord respects the constraints of the given clue
+ * @param clue
+ * @param word
+ * @return 1 if word respects clue else 0
+ */
+int respectsClue(FiveLetterWord word, const Clue* clue) {
     FiveLetterWord accounted_word;
     strcpy(accounted_word, word);
+    // Check that it agrees with all green boxes
     for (size_t i = 0; i < 5; ++i) {
         if (clue->feedback[i] == CLUE_CORRECT_POS_LETTER_GREEN) {
             if (word[i] != clue->guess[i]) {
@@ -85,6 +132,8 @@ int respectsClue(const Clue* clue, FiveLetterWord word) {
             }
         }
     }
+
+    // Check that all yellow boxes are accounted for
     for (size_t i = 0; i < 5; ++i) {
         if (clue->feedback[i] == CLUE_CORRECT_LETTER_POS_WRONG_YELLOW) {
             int loc = findLetter(accounted_word, clue->guess[i]);
@@ -95,9 +144,42 @@ int respectsClue(const Clue* clue, FiveLetterWord word) {
             }
         }
     }
+
+    // Check that no grey box incorrect letter is included
     for (size_t i = 0; i < 5; ++i) {
         if (clue->feedback[i] == CLUE_INCORRECT_LETTER_GRAY
             && containsLetter(accounted_word, clue->guess[i])) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/**
+ * Scan for clie from stdin
+ * @param clue_out
+ * @return 1 if a valid clue is scanned 0 otherwise
+ */
+int scanForClueResult(Clue* clue_out) {
+    char clue_text[2048];
+    if (scanf("%s", clue_text) == 1) {
+        strcpy(clue_out->feedback, clue_text);
+        return isClueFormat(clue_out->feedback);
+    }
+    return 0;
+}
+
+/**
+ * Checks if a word respects a set of n given clues
+ * @param word word to check
+ * @param clues a pointer to a set (array) of clues
+ * @param num_clues number of clues in the set
+ * @return
+ */
+int respectsAllClues(FiveLetterWord word, Clue* clues, int num_clues) {
+    for (size_t j = 0; j < num_clues; ++j) {
+        if (!respectsClue(word, &clues[j])) {
             return 0;
         }
     }
@@ -118,42 +200,36 @@ int main(int argc, char** argv) {
     strcpy(guess, "crane");  // Strategy is to start with "crane"
 
     while(1) {
-        printf("GUESS:  %s\nRESULT> ", guess);
         Clue* next_clue = &given_clues[num_clues];
         strcpy(next_clue->guess, guess);
-        char result[2048];
-        if (scanf("%s", result) == 1 && stringIsValidFeedback(result)) {
-            strcpy(next_clue->feedback, result);
+
+        printf("GUESS:  %s\nRESULT> ", next_clue->guess);
+        if (scanForClueResult(next_clue)) {
             num_clues++;
-        } else if (strlen(result) == 1 && result[0] == 'Q' || result[0] == 'q') {
+        } else if (strcmp(next_clue->feedback, "q") == 0 || strcmp(next_clue->feedback, "Q") == 0) {
+            printf("Bye\n");
             return 0;
         } else {
             printf("Invalid RESULT format\n");
             return 1;
         }
-        FiveLetterWord valid_candidates[15];
-        size_t num_valid_candidates = 0;
-        for (size_t i = 0; i < pool.num_words && num_valid_candidates < 15; ++i) {
-            int is_valid_candidate = 1;
-            for (size_t j = 0; j < num_clues && is_valid_candidate; ++j) {
-                if (!respectsClue(&given_clues[j], pool.words[i])) {
-                    is_valid_candidate = 0;
-                }
-            }
-            if (is_valid_candidate) {
-                if (num_valid_candidates % 5 == 0) {
+
+        FiveLetterWordPool valid_candidates;
+        valid_candidates.num_words = 0;
+        for (size_t i = 0; i < pool.num_words && valid_candidates.num_words < 100; ++i) {
+            if (respectsAllClues(pool.words[i], given_clues, num_clues)) {
+                if (valid_candidates.num_words % 5 == 0) {
                     printf("\n");
                 }
-                strcpy(valid_candidates[num_valid_candidates], pool.words[i]);
-                printf("%3lu: %s    ", num_valid_candidates, valid_candidates[num_valid_candidates]);
-                num_valid_candidates++;
+                printf("%3lu: %s    ", valid_candidates.num_words, pool.words[i]);
+                appendWord(&valid_candidates, pool.words[i]);
             }
         }
         printf("\nCHOOSE> ");
         int s = -1;
         if (scanf("%d", &s) == 1) {
-            if (0 <= s && s < 15) {
-                strcpy(guess, valid_candidates[s]);
+            if (0 <= s && s < valid_candidates.num_words) {
+                strcpy(guess, valid_candidates.words[s]);
             } else {
                 printf("\nOriginal guess> ");
                 scanf("%s", guess);
