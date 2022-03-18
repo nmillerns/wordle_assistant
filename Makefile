@@ -1,6 +1,5 @@
 all:	wordle_assistant
 
-
 wordle_assistant:	wordle_assistant.o
 		$(CC) $(CFLAGS) $? $(LDFLAGS) -o $@
 

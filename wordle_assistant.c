@@ -86,7 +86,6 @@ void populateFiveLetterWords(FILE* dictionary_file, FiveLetterWordPool* five_let
     while(!feof(dictionary_file)) {
         fscanf(dictionary_file, "%s", buffer);
         if (5 == strlen(buffer) && stringIsExclusiveLowerAlpha(buffer)) {
-            printf("Word %s\n", buffer);
             FiveLetterWord word;
             strcpy(word, buffer);
             appendWord(five_letter_words_out, word);
@@ -157,8 +156,8 @@ int respectsClue(FiveLetterWord word, const Clue* clue) {
 }
 
 /**
- * Scan for clie from stdin
- * @param clue_out
+ * Scan for clue from stdin
+ * @param clue_out Pointer to Clue output variable. Clue.feedback will be populated
  * @return 1 if a valid clue is scanned 0 otherwise
  */
 int scanForClueResult(Clue* clue_out) {
@@ -192,8 +191,6 @@ int main(int argc, char** argv) {
     populateFiveLetterWords(f, &pool);
     fclose(f);
 
-    printf("Num of 5 letter words %lu\n", pool.num_words);
-
     Clue given_clues[10];
     size_t num_clues = 0;
     FiveLetterWord guess;
@@ -217,14 +214,21 @@ int main(int argc, char** argv) {
         FiveLetterWordPool valid_candidates;
         valid_candidates.num_words = 0;
         for (size_t i = 0; i < pool.num_words && valid_candidates.num_words < 100; ++i) {
+            // If it respects all clues given so far, it is a valid word
             if (respectsAllClues(pool.words[i], given_clues, num_clues)) {
-                if (valid_candidates.num_words % 5 == 0) {
-                    printf("\n");
-                }
-                printf("%3lu: %s    ", valid_candidates.num_words, pool.words[i]);
                 appendWord(&valid_candidates, pool.words[i]);
             }
         }
+
+        // Print out valid candidates with index
+        for (size_t i = 0; i < valid_candidates.num_words; ++i) {
+            if (i % 5 == 0) {
+                printf("\n");
+            }
+            printf("%3lu: %s    ", i, valid_candidates.words[i]);
+        }
+
+        // The user selects a guess giving valid word by index
         printf("\nCHOOSE> ");
         int s = -1;
         if (scanf("%d", &s) == 1) {
