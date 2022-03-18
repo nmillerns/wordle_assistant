@@ -10,5 +10,6 @@ at a different position.
 
 
 ![Stats from using wordle_assistant](/stats.png)
+
 Here are some stats achieved largely using wordle_assistant. It is somewhat
 contaminated by older usage and user error.
