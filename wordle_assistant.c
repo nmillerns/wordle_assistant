@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Print out valid candidates with index
+        // Print out valid candidates by index
         for (size_t i = 0; i < valid_candidates.num_words; ++i) {
             if (i % 5 == 0) {
                 printf("\n");
@@ -228,7 +228,7 @@ int main(int argc, char** argv) {
             printf("%3lu: %s    ", i, valid_candidates.words[i]);
         }
 
-        // The user selects a guess giving valid word by index
+        // The user selects a guess by index giving a valid word
         printf("\nCHOOSE> ");
         int s = -1;
         if (scanf("%d", &s) == 1) {
