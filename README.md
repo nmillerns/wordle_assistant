@@ -3,7 +3,7 @@ An interactive Assistant to help user make guesses in Wordle.
 Written in very basic standard C. 
 
 Enter the clue feedback given by Wordle at the prompt, in the format
-X, Y, G for grey, yellow, and green boxes respectively . For example,
+X, Y, G for grey, yellow, and green boxes respectively. For example,
 XGXXY where the first letter is wrong, the second letter is correct,
 the third and fourth letters are wrong, and the last letter should appear 
 at a different position.
