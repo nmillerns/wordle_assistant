@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
     Clue given_clues[10];
     size_t num_clues = 0;
     FiveLetterWord guess;
-    strcpy(guess, "crane");  // Strategy is to start with "crane"
+    strcpy(guess, "slate");  // Strategy is to start with "slate"
 
     while(1) {
         Clue* next_clue = &given_clues[num_clues];
