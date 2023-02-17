@@ -160,7 +160,7 @@ int respectsClue(FiveLetterWord word, const Clue* clue) {
  * @param clue_out Pointer to Clue output variable. Clue.feedback will be populated
  * @return 1 if a valid clue is scanned 0 otherwise
  */
-int scanForClueResult(Clue* clue_out) {
+int scanForClue(Clue* clue_out) {
     char clue_text[2048];
     if (scanf("%s", clue_text) == 1) {
         strcpy(clue_out->feedback, clue_text);
@@ -172,9 +172,9 @@ int scanForClueResult(Clue* clue_out) {
 /**
  * Checks if a word respects a set of n given clues
  * @param word word to check
- * @param clues a pointer to a set (array) of clues
+ * @param clues a pointer to a set (array) of clues to check against word
  * @param num_clues number of clues in the set
- * @return
+ * @return true if the word respects all clues
  */
 int respectsAllClues(FiveLetterWord word, Clue* clues, int num_clues) {
     for (size_t j = 0; j < num_clues; ++j) {
@@ -194,14 +194,28 @@ int main(int argc, char** argv) {
     Clue given_clues[10];
     size_t num_clues = 0;
     FiveLetterWord guess;
-    strcpy(guess, "slate");  // Strategy is to start with "slate"
+    // Print usage if needed
+    if (argc > 2 || 
+       (argc == 2 && strcmp(argv[1], "-h") == 0)) {
+        printf("Usage: %s (guess)\n", argv[0]);
+        return 1;
+    } else if (argc == 2) {
+        // get guess from command line
+        strcpy(guess, argv[1]);
+    } else {
+        strcpy(guess, "slate");  // Default strategy is to start with "slate"
+    }
 
     while(1) {
         Clue* next_clue = &given_clues[num_clues];
         strcpy(next_clue->guess, guess);
+        if (strlen(next_clue->guess) != 5 || !stringIsExclusiveLowerAlpha(next_clue->guess)) {
+            printf("Invalid guess \"%s\". It is not a five-letter word\n", next_clue->guess);
+            return 1;
+        }
 
         printf("GUESS:  %s\nRESULT> ", next_clue->guess);
-        if (scanForClueResult(next_clue)) {
+        if (scanForClue(next_clue)) {
             num_clues++;
         } else if (strcmp(next_clue->feedback, "q") == 0 || strcmp(next_clue->feedback, "Q") == 0) {
             printf("Bye\n");
@@ -213,6 +227,7 @@ int main(int argc, char** argv) {
 
         FiveLetterWordPool valid_candidates;
         valid_candidates.num_words = 0;
+        // Find up to 100 valid word candidates that respect all clues given so far
         for (size_t i = 0; i < pool.num_words && valid_candidates.num_words < 100; ++i) {
             // If it respects all clues given so far, it is a valid word
             if (respectsAllClues(pool.words[i], given_clues, num_clues)) {
