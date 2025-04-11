@@ -18,6 +18,20 @@ typedef struct {
     FiveLetterWord feedback;
 } Clue;
 
+typedef struct {
+    Clue clues[10];
+    size_t num_clues;
+} ClueSet;
+
+Clue* grabNextClue(ClueSet* clue_set) {
+    if (clue_set->num_clues < 10) {
+        Clue* next_clue = &clue_set->clues[clue_set->num_clues];
+        clue_set->num_clues++;
+        return next_clue;
+    }
+    return NULL;
+}
+
 /**
  * Finds the first position of a given letter in a word
  * @param word
@@ -156,29 +170,28 @@ int respectsClue(FiveLetterWord word, const Clue* clue) {
 }
 
 /**
- * Scan for clue from stdin
+ * Scan for clue feedback from stdin
  * @param clue_out Pointer to Clue output variable. Clue.feedback will be populated
  * @return 1 if a valid clue is scanned 0 otherwise
  */
-int scanForClue(Clue* clue_out) {
-    char clue_text[2048];
-    if (scanf("%s", clue_text) == 1) {
-        strcpy(clue_out->feedback, clue_text);
+int scanForFeedback(Clue* clue_out) {
+    char feedback_text[2048];
+    if (scanf("%s", feedback_text) == 1) {
+        strcpy(clue_out->feedback, feedback_text);
         return isClueFormat(clue_out->feedback);
     }
     return 0;
 }
 
 /**
- * Checks if a word respects a set of n given clues
+ * Checks if a word respects a set of given clues
  * @param word word to check
- * @param clues a pointer to a set (array) of clues to check against word
- * @param num_clues number of clues in the set
+ * @param clue_set a pointer to a clue set
  * @return true if the word respects all clues
  */
-int respectsAllClues(FiveLetterWord word, Clue* clues, int num_clues) {
-    for (size_t j = 0; j < num_clues; ++j) {
-        if (!respectsClue(word, &clues[j])) {
+int respectsAllClues(FiveLetterWord word, const ClueSet* clue_set) {
+    for (size_t j = 0; j < clue_set->num_clues; ++j) {
+        if (!respectsClue(word, &clue_set->clues[j])) {
             return 0;
         }
     }
@@ -191,8 +204,8 @@ int main(int argc, char** argv) {
     populateFiveLetterWords(f, &pool);
     fclose(f);
 
-    Clue given_clues[10];
-    size_t num_clues = 0;
+    ClueSet given_clues;
+    given_clues.num_clues = 0;
     FiveLetterWord guess;
     // Print usage if needed
     if (argc > 2 || 
@@ -207,16 +220,17 @@ int main(int argc, char** argv) {
     }
 
     while(1) {
-        Clue* next_clue = &given_clues[num_clues];
+        Clue* next_clue = grabNextClue(&given_clues);
+        // Populate guess with a valid five-letter word
         strcpy(next_clue->guess, guess);
         if (strlen(next_clue->guess) != 5 || !stringIsExclusiveLowerAlpha(next_clue->guess)) {
             printf("Invalid guess \"%s\". It is not a five-letter word\n", next_clue->guess);
             return 1;
         }
 
-        printf("GUESS:  %s\nRESULT> ", next_clue->guess);
-        if (scanForClue(next_clue)) {
-            num_clues++;
+        printf("\nGuess is %s\nRESULT>  ", next_clue->guess);
+        if (scanForFeedback(next_clue)) {
+            // Successfully scanned feedback for clue
         } else if (strcmp(next_clue->feedback, "q") == 0 || strcmp(next_clue->feedback, "Q") == 0) {
             printf("Bye\n");
             return 0;
@@ -227,17 +241,17 @@ int main(int argc, char** argv) {
 
         FiveLetterWordPool valid_candidates;
         valid_candidates.num_words = 0;
-        // Find up to 100 valid word candidates that respect all clues given so far
+        // Find up to 100 valid word candidates to suggest that respect all clues given so far
         for (size_t i = 0; i < pool.num_words && valid_candidates.num_words < 100; ++i) {
             // If it respects all clues given so far, it is a valid word
-            if (respectsAllClues(pool.words[i], given_clues, num_clues)) {
+            if (respectsAllClues(pool.words[i], &given_clues)) {
                 appendWord(&valid_candidates, pool.words[i]);
             }
         }
 
-        // Print out valid candidates with index
+        // Print out valid candidate suggestions with index to select from
         for (size_t i = 0; i < valid_candidates.num_words; ++i) {
-            if (i % 5 == 0) {
+            if (i % 5 == 0) {  // Print in rows of 5
                 printf("\n");
             }
             printf("%3lu: %s    ", i, valid_candidates.words[i]);
