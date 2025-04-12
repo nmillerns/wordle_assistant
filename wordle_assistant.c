@@ -4,10 +4,11 @@
 
 typedef char FiveLetterWord[5 + 1];  // extra null termination character
 #define MAX_NUM_WORDS 10000
+#define MAX_NUM_CLUES 10
 
-#define CLUE_CORRECT_POS_LETTER_GREEN 'G'
-#define CLUE_CORRECT_LETTER_POS_WRONG_YELLOW 'Y'
-#define CLUE_INCORRECT_LETTER_GRAY 'X'
+#define GREEN_CORRECT_LETTER 'G'
+#define YELLOW_CORRECT_LETTER_WRONG_POS 'Y'
+#define GRAY_INCORRECT_LETTER 'X'
 
 /**
  * Represents a clue given by Worlde website when a guess word is entered
@@ -19,12 +20,12 @@ typedef struct {
 } Clue;
 
 typedef struct {
-    Clue clues[10];
+    Clue clues[MAX_NUM_CLUES];
     size_t num_clues;
 } ClueSet;
 
 Clue* grabNextClue(ClueSet* clue_set) {
-    if (clue_set->num_clues < 10) {
+    if (clue_set->num_clues < MAX_NUM_CLUES) {
         Clue* next_clue = &clue_set->clues[clue_set->num_clues];
         clue_set->num_clues++;
         return next_clue;
@@ -119,7 +120,7 @@ int isClueFormat(const char* str) {
         return 0;
     }
     for (size_t i = 0; i < 5; ++i) {
-        if (str[i] != CLUE_CORRECT_POS_LETTER_GREEN && str[i] != CLUE_CORRECT_LETTER_POS_WRONG_YELLOW && str[i] != CLUE_INCORRECT_LETTER_GRAY) {
+        if (str[i] != GREEN_CORRECT_LETTER && str[i] != YELLOW_CORRECT_LETTER_WRONG_POS && str[i] != GRAY_INCORRECT_LETTER) {
             return 0;
         }
     }
@@ -137,7 +138,7 @@ int respectsClue(FiveLetterWord word, const Clue* clue) {
     strcpy(accounted_word, word);
     // Check that it agrees with all green boxes
     for (size_t i = 0; i < 5; ++i) {
-        if (clue->feedback[i] == CLUE_CORRECT_POS_LETTER_GREEN) {
+        if (GREEN_CORRECT_LETTER == clue->feedback[i]) {
             if (word[i] != clue->guess[i]) {
                 return 0;
             } else {
@@ -148,7 +149,7 @@ int respectsClue(FiveLetterWord word, const Clue* clue) {
 
     // Check that all yellow boxes are accounted for
     for (size_t i = 0; i < 5; ++i) {
-        if (clue->feedback[i] == CLUE_CORRECT_LETTER_POS_WRONG_YELLOW) {
+        if (YELLOW_CORRECT_LETTER_WRONG_POS == clue->feedback[i]) {
             int loc = findLetter(accounted_word, clue->guess[i]);
             if (word[i] == clue->guess[i] || loc < 0) {
                 return 0;
@@ -160,7 +161,7 @@ int respectsClue(FiveLetterWord word, const Clue* clue) {
 
     // Check that no grey box incorrect letter is included
     for (size_t i = 0; i < 5; ++i) {
-        if (clue->feedback[i] == CLUE_INCORRECT_LETTER_GRAY
+        if (GRAY_INCORRECT_LETTER == clue->feedback[i]
             && containsLetter(accounted_word, clue->guess[i])) {
             return 0;
         }
@@ -247,6 +248,11 @@ int main(int argc, char** argv) {
             if (respectsAllClues(pool.words[i], &given_clues)) {
                 appendWord(&valid_candidates, pool.words[i]);
             }
+        }
+
+        if (valid_candidates.num_words == 1) {
+            printf("\nThe word must be %s\n\n", valid_candidates.words[0]);
+            return 0;
         }
 
         // Print out valid candidate suggestions with index to select from
